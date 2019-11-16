@@ -51,9 +51,11 @@ public:
 				 const float minx, const float miny,
 				 const float maxx, const float maxy);
 	
+	typedef bool (*FnQueryItemsFilter)(unsigned short, void* userPtr);
 	int queryItems(const float minx, const float miny,
 				   const float maxx, const float maxy,
-				   unsigned short* ids, const int maxIds) const;
+				   unsigned short* ids, const int maxIds,
+				   FnQueryItemsFilter fnQueryFilter, void* userPtr) const;
 	
 	int getItemCountAt(const int x, const int y) const;
 	

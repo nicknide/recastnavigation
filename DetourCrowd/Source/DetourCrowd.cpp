@@ -191,31 +191,50 @@ static int getNeighbours(const float* pos, const float height, const float range
 {
 	int n = 0;
 	
+	struct QueryItemsFilter
+	{
+		const float* pos;
+		const float height;
+		const float dtSqr_range;
+		const dtCrowdAgent* skip;
+		dtCrowdNeighbour* result;
+		const int maxResult;
+		dtCrowdAgent** agents;
+		//const int /*nagents*/;
+		dtProximityGrid* grid;
+		int n;
+		static bool DoCheck(unsigned short uid, void* userPtr)
+		{
+			QueryItemsFilter* pthis = (QueryItemsFilter*)userPtr;
+
+			const dtCrowdAgent* ag = pthis->agents[uid];
+
+			if ( ag == pthis->skip ) return false;
+
+			// Check for overlap.
+			float diff[3];
+			dtVsub(diff, pthis->pos, ag->npos);
+			if ( dtMathFabsf(diff[1]) >= (pthis->height + ag->params.height) / 2.0f )
+				return false;
+
+			//diff[1] = 0;
+			const float distSqr = dtVFloorlenSqr(diff);
+			if ( distSqr > pthis->dtSqr_range )
+				return false;
+
+			pthis->n = addNeighbour(uid, distSqr, pthis->result, pthis->n, pthis->maxResult);
+			return true;
+		}
+	}queryItemsFilter = {pos, height, dtSqr(range), skip, result, maxResult, agents, grid, 0};
+
 	static const int MAX_NEIS = 32;
 	unsigned short ids[MAX_NEIS];
 	int nids = grid->queryItems(pos[0]-range, pos[2]-range,
 								pos[0]+range, pos[2]+range,
-								ids, MAX_NEIS);
-	
-	for (int i = 0; i < nids; ++i)
-	{
-		const dtCrowdAgent* ag = agents[ids[i]];
-		
-		if (ag == skip) continue;
-		
-		// Check for overlap.
-		float diff[3];
-		dtVsub(diff, pos, ag->npos);
-		if (dtMathFabsf(diff[1]) >= (height+ag->params.height)/2.0f)
-			continue;
-		diff[1] = 0;
-		const float distSqr = dtVlenSqr(diff);
-		if (distSqr > dtSqr(range))
-			continue;
-		
-		n = addNeighbour(ids[i], distSqr, result, n, maxResult);
-	}
-	return n;
+								ids, MAX_NEIS,
+								&QueryItemsFilter::DoCheck, &queryItemsFilter);
+
+	return queryItemsFilter.n;
 }
 
 static int addToOptQueue(dtCrowdAgent* newag, dtCrowdAgent** agents, const int nagents, const int maxAgents)

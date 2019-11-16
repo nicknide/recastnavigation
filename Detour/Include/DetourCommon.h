@@ -211,6 +211,15 @@ inline float dtVlenSqr(const float* v)
 	return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 }
 
+
+/// Derives the square of the scalar floor length of the vector. (len * len: without dim y.)
+///  @param[in]		v The vector. [(x, y, z)]
+/// @return The square of the scalar floor length of the vector.
+inline float dtVFloorlenSqr(const float* v)
+{
+	return v[0]*v[0] + v[2]*v[2];
+}
+
 /// Returns the distance between two points.
 ///  @param[in]		v1	A point. [(x, y, z)]
 ///  @param[in]		v2	A point. [(x, y, z)]
